@@ -105,7 +105,7 @@ help:
 	@echo "                 do not give the file extension .gtkw. Wave"
 	@echo "                 format file must be saved in same directory as"
 	@echo "                 the makefile."
-	@echo "  view         - view the gate level circuit schematic"
+	@echo "  rtl           - view the rtl schematic"
 	@echo "----------------------------------------------------------------"
 
 all: $(SIM_SOURCE)
@@ -212,7 +212,7 @@ endif
 # Rule to look at the gate level schematic of the circuit
 view: $(addprefix $(SRC)/, $(TOP_FILE) $(COMPONENT_FILES))
 	@echo "----------------------------------------------------------------"
-	@echo "Making Gate Level Schematic ....."
+	@echo "Generating RTL Schematic ....."
 	@echo "----------------------------------------------------------------\n\n"
 	@$(DC) -d -p 'read_verilog -sv $^; hierarchy -check -top $(TOP_MODULE); proc; opt; fsm; opt; memory; opt; show' > log_mapping.log
 	@echo "Done creating Schematic"	
