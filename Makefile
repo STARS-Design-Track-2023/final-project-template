@@ -252,7 +252,7 @@ lint: $(addprefix $(SRC)/, $(TOP_FILE) $(COMPONENT_FILES) $(TB))
 	@echo "----------------------------------------------------------------"
 	@echo "Checking Syntax ....."
 	@echo "----------------------------------------------------------------\n\n"
-	@verilator --lint-only --timing -Wno-MULTITOP -Wno-TIMESCALEMOD $^
+	@verilator --lint-only -Wno-MULTITOP -Wno-TIMESCALEMOD $^
 	@echo "\n\n"
 	@echo "Done linting"
 
