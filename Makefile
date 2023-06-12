@@ -210,7 +210,7 @@ else
 endif
 
 # Rule to look at the gate level schematic of the circuit
-view: $(addprefix $(SRC)/, $(TOP_FILE) $(COMPONENT_FILES))
+rtl: $(addprefix $(SRC)/, $(TOP_FILE) $(COMPONENT_FILES))
 	@echo "----------------------------------------------------------------"
 	@echo "Generating RTL Schematic ....."
 	@echo "----------------------------------------------------------------\n\n"
