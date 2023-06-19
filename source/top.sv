@@ -1,5 +1,7 @@
 `default_nettype none
-module top (
+
+module top 
+(
   // I/O ports
   input  logic hwclk, reset,
   input  logic [20:0] pb,
@@ -15,6 +17,4 @@ module top (
 );
 
 
-
-  
 endmodule
