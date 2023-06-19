@@ -10,7 +10,7 @@
 - FPGA Demonstration
   - 12 MHz clock
   - Shield
-    - 16 Pushbuttons
+    - 20 Pushbuttons
     - Some other stuff
   - Bare
     - Pin Mapping
