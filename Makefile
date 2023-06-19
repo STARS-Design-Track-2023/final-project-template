@@ -4,36 +4,14 @@
 # Set tab spacing to 2 spaces per tab for best viewing results
 ###########################################################################################
 
+export PATH            := /home/shay/a/ece270/bin:$(PATH)
+export LD_LIBRARY_PATH := /home/shay/a/ece270/lib:$(LD_LIBRARY_PATH)
+
 ##############################################################################
 # VARIABLES
 ##############################################################################
 
-# include binaries and libraries from ece270
-export PATH := /home/shay/a/ece270/bin:$(PATH)
-export LD_LIBRARY_PATH := /home/shay/a/ece270/lib:$(LD_LIBRARY_PATH)
-
-
-# binary names
-YOSYS=yosys
-NEXTPNR=nextpnr-ice40
-SHELL=bash
-
-# project vars and filenames
-PROJ	= fpga
-PINMAP 	= fpga/pinmap.pcf
-#TCLPREF = addwave.gtkw
-ICE   	= fpga/ice40hx8k.sv
-UART	= fpga/uart/uart.v fpga/uart/uart_tx.v fpga/uart/uart_rx.v
-FILES   = $(ICE) fpga/top.sv $(addprefix $(SRC)/, $(FPGA_SRC_FILES) ) $(UART)
-FPGA_BUILD   = ./fpga/build
-
-# fpga specific configuration
-DEVICE  = 8k
-TIMEDEV = hx8k
-FOOTPRINT = ct256
-
 # Source
-
 
 # Specify the name of the top level file (do not include the source folder in the name)
 # NOTE: YOU WILL NEED TO SET THIS VARIABLE'S VALUE WHEN WORKING WITH HEIRARCHICAL DESIGNS
@@ -43,13 +21,9 @@ TOP_FILE         :=
 # NOTE: YOU WILL NEED TO SET THIS VARIABLE'S VALUE WHEN WORKING WITH HEIRARCHICAL DESIGNS
 COMPONENT_FILES  := 
 
-
-FPGA_SRC_FILES   := 
-
-
 # Specify the filepath of the test bench you want to use (ie. tb_top_level.sv)
 # (do not include the source folder in the name)
-TB               := tb_$(TOP_FILE)
+TB               :=  
 
 # Get the top level design and test_bench module names
 TB_MODULE		 := $(notdir $(basename $(TB)))
@@ -81,10 +55,27 @@ CFLAGS           := -g2012 -v
 # Design Compiler
 DC               := yosys
 
+# FPGA project vars and filenames
+PROJ	         := ice40
+PINMAP 	         := $(PROJ)/pinmap.pcf
+ICE   	         := $(PROJ)/ice40hx8k.sv
+UART	         := $(addprefix $(PROJ)/uart/, uart.v uart_tx.v uart_rx.v)
+FILES            := $(ICE) $(SRC)/top.sv $(addprefix $(SRC)/, $(TOP_FILE) $(COMPONENT_FILES)) $(UART)
+FPGA_BUILD       := ./$(PROJ)/build
+
+# FPGA specific configuration
+DEVICE           := 8k
+TIMEDEV          := hx8k
+FOOTPRINT        := ct256
+
 # Cell libraries
 PDK              := $(PDK_ROOT)
 LIBERTY          := $(PDK)/lib/sky130_fd_sc_hd__tt_100C_1v80.lib
 VERILOG          := $(PDK)/verilog/primitives.v $(PDK)/verilog/sky130_fd_sc_hd.v
+
+# binary names
+NEXTPNR          :=nextpnr-ice40
+SHELL            :=bash
 
 ##############################################################################
 # RULES
@@ -134,7 +125,13 @@ help:
 	@echo "                 do not give the file extension .gtkw. Wave"
 	@echo "                 format file must be saved in same directory as"
 	@echo "                 the makefile."
-	@echo "  rtl           - view the rtl schematic"
+	@echo "  rtl          - view the rtl schematic"
+	@echo
+	@echo "FPGA targets:"
+	@echo "  ice          - synthesizes the source files along with the"
+	@echo "                 ice40 files to make and netlist and then"
+	@echo "                 place and route to program ice40 FPGA as per"
+	@echo "                 the given design."
 	@echo "----------------------------------------------------------------"
 
 all: $(SIM_SOURCE)
@@ -153,16 +150,17 @@ clean:
 	@rm -rf $(MAP)/*
 	@rm -f *.log
 	@rm -f *.vcd
+	@rm -rf $(PROJ)/build
 	@rm -f xt
-	@echo "Done\n\n"
+	@echo -e "Done\n\n"
 
 print_vars:
-	@echo "Component Files: \n $(foreach file, $(COMPONENT_FILES), $(file)\n)"
+	@echo -e "Component Files: \n $(foreach file, $(COMPONENT_FILES), $(file)\n)"
 	@echo "Top level File: $(TOP_FILE)"
 	@echo "Testbench: $(TB)"
 	@echo "Top level module: $(TOP_MODULE)"
 	@echo "Testbench module: $(TB_MODULE)"
-	@echo "Gate Library: '$(GATE_LIB)'"
+	@echo "Gate Library: '$(PDK)'"
 	@echo "Source work library: '$(SRC)'"
 	@echo "Mapped work library: '$(MAP)'"
 
@@ -175,25 +173,25 @@ print_vars:
 $(SRC): $(addprefix $(SRC)/, $(TOP_FILE) $(COMPONENT_FILES) $(TB))
 	@echo "----------------------------------------------------------------"
 	@echo "Creating executable for source compilation ....."
-	@echo "----------------------------------------------------------------\n\n"
+	@echo -e "----------------------------------------------------------------\n\n"
 	@mkdir -p ./$(BUILD)
 	@$(VC) $(CFLAGS) -o $(BUILD)/$(SIM_SOURCE).vvp $^
-	@echo "\n\n"
-	@echo "Compilation complete\n\n"
+	@echo -e "\n\n"
+	@echo -e "Compilation complete\n\n"
 
 # Define a pattern rule to automatically compile mapped design files for a full mapped design
 $(MAP): $(addprefix $(SRC)/, $(TOP_FILE) $(COMPONENT_FILES) $(TB))
 	@echo "----------------------------------------------------------------"
 	@echo "Synthesizing and Compiling with sky130_fd_sc_hd ....."
-	@echo "----------------------------------------------------------------\n\n"
+	@echo -e "----------------------------------------------------------------\n\n"
 	@mkdir -p ./$(MAP)
 	@mkdir -p ./$(BUILD)
 	@touch -c $(TOP).log
 	@$(DC) -d -p 'read_verilog -sv -noblackbox $(addprefix $(SRC)/, $(TOP_FILE) $(COMPONENT_FILES)); synth -top $(TOP_MODULE); dfflibmap -liberty $(LIBERTY); abc -liberty $(LIBERTY); clean; write_verilog -noattr -noexpr -nohex -nodec -defparam $@/$(TOP_MODULE).v' > $(TOP_MODULE).log
 	@echo "Synthesis complete .....\n\n"
 	@$(VC) $(CFLAGS) -o $(BUILD)/$(SIM_MAPPED).vvp -DFUNCTIONAL -DUNIT_DELAY=#1 $@/$(TOP_MODULE).v $(SRC)/$(TB) $(VERILOG)
-	@echo "\n\n"
-	@echo "Compilation complete\n\n"
+	@echo -e "\n\n"
+	@echo -e "Compilation complete\n\n"
 
 
 ##############################################################################
@@ -204,17 +202,17 @@ $(MAP): $(addprefix $(SRC)/, $(TOP_FILE) $(COMPONENT_FILES) $(TB))
 $(SIM_SOURCE): $(SRC)
 	@echo "----------------------------------------------------------------"
 	@echo "Simulating source ....."
-	@echo "----------------------------------------------------------------\n\n"
-	@vvp $(BUILD)/$@.vvp
-	@echo "\n\n"
+	@echo -e "----------------------------------------------------------------\n\n"
+	@vvp -lxt -s $(BUILD)/$@.vvp
+	@echo -e "\n\n"
 
 # This rule defines how to simulate the mapped form of the full design
 $(SIM_MAPPED): $(MAP)
 	@echo "----------------------------------------------------------------"
 	@echo "Simulating mapped ....."
-	@echo "----------------------------------------------------------------\n\n"
-	@vvp $(BUILD)/$@.vvp
-	@echo "\n\n"
+	@echo -e "----------------------------------------------------------------\n\n"
+	@vvp -lxt -s $(BUILD)/$@.vvp
+	@echo -e "\n\n"
 
 
 ##############################################################################
@@ -222,25 +220,40 @@ $(SIM_MAPPED): $(MAP)
 ##############################################################################
 
 # this target checks your code and synthesizes it into a netlist
-$(FPGA_BUILD)/$(PROJ).json : $(ICE)  $(addprefix $(SRC)/, $(FPGA_SRC_FILES) ) $(PINMAP) Makefile fpga/top.sv
-	# lint with Verilator
-	verilator --lint-only -Werror-WIDTH -Werror-SELRANGE -Werror-COMBDLY -Werror-LATCH -Werror-MULTIDRIVEN fpga/top.sv $(addprefix $(SRC)/, $(FPGA_SRC_FILES) )
-	# if build folder doesn't exist, create it
-	mkdir -p $(FPGA_BUILD)
-	# synthesize using Yosys
-	$(YOSYS) -p "read_verilog -sv -noblackbox $(FILES); synth_ice40 -top ice40hx8k -json $(FPGA_BUILD)/$(PROJ).json"
-	
+$(FPGA_BUILD)/$(PROJ).json : $(ICE) $(addprefix $(SRC)/, $(COMPONENT_FILES) $(TOP_FILE)) $(PINMAP) $(SRC)/top.sv
+	@echo "----------------------------------------------------------------"
+	@echo "Checking Syntax ....."
+	@echo -e "----------------------------------------------------------------\n\n"
+	@verilator --lint-only -Werror-WIDTH -Werror-SELRANGE -Werror-COMBDLY -Werror-LATCH -Werror-MULTIDRIVEN $(SRC)/top.sv $(addprefix $(SRC)/, $(COMPONENT_FILES) $(TOP_FILE))
+	@mkdir -p $(FPGA_BUILD)
+	@echo "----------------------------------------------------------------"
+	@echo "Synthesizing to ice40 ....."
+	@echo -e "----------------------------------------------------------------\n\n"
+	@$(DC) -p "read_verilog -sv -noblackbox $(FILES); synth_ice40 -top ice40hx8k -json $(FPGA_BUILD)/$(PROJ).json" > $(PROJ).log
+	@echo -e "\n\n"
+	@echo -e "Synthesis Complete \n\n"
 	
 # Place and route using nextpnr
 $(FPGA_BUILD)/$(PROJ).asc : $(FPGA_BUILD)/$(PROJ).json
-	$(NEXTPNR) --hx8k --package ct256 --pcf $(PINMAP) --asc $(FPGA_BUILD)/$(PROJ).asc --json $(FPGA_BUILD)/$(PROJ).json 2> >(sed -e 's/^.* 0 errors$$//' -e '/^Info:/d' -e '/^[ ]*$$/d' 1>&2)
+	@echo "----------------------------------------------------------------"
+	@echo "Mapping to ice40 ....."
+	@echo -e "----------------------------------------------------------------\n\n"
+	@$(NEXTPNR) --hx8k --package ct256 --pcf $(PINMAP) --asc $(FPGA_BUILD)/$(PROJ).asc --json $(FPGA_BUILD)/$(PROJ).json 2> >(sed -e 's/^.* 0 errors$$//' -e '/^Info:/d' -e '/^[ ]*$$/d' 1>&2) >> $(PROJ).log
+	@echo -e "\n\n"
+	@echo -e "Place and Route Complete \n\n" 
+
 # Convert to bitstream using IcePack
 $(FPGA_BUILD)/$(PROJ).bin : $(FPGA_BUILD)/$(PROJ).asc
-	icepack $(FPGA_BUILD)/$(PROJ).asc $(FPGA_BUILD)/$(PROJ).bin
+	@icepack $(FPGA_BUILD)/$(PROJ).asc $(FPGA_BUILD)/$(PROJ).bin >> $(PROJ).log
+	@echo -e "\n\n"
+	@echo -e "Converted to Bitstream for FPGA \n\n" 
 	
 # synthesize and flash the FPGA
-fpga: $(FPGA_BUILD)/$(PROJ).bin
-	iceprog -S $(FPGA_BUILD)/$(PROJ).bin
+ice : $(FPGA_BUILD)/$(PROJ).bin
+	@echo "----------------------------------------------------------------"
+	@echo "Flashing onto FPGA ....."
+	@echo -e "----------------------------------------------------------------\n\n"
+	@iceprog -S $(FPGA_BUILD)/$(PROJ).bin
 
 
 ##############################################################################
@@ -251,10 +264,10 @@ fpga: $(FPGA_BUILD)/$(PROJ).bin
 lint: $(addprefix $(SRC)/, $(TOP_FILE) $(COMPONENT_FILES) $(TB))
 	@echo "----------------------------------------------------------------"
 	@echo "Checking Syntax ....."
-	@echo "----------------------------------------------------------------\n\n"
-	@verilator --lint-only -Wno-MULTITOP -Wno-TIMESCALEMOD $^
-	@echo "\n\n"
-	@echo "Done linting"
+	@echo -e "----------------------------------------------------------------\n\n"
+	@verilator --lint-only  -Wno-MULTITOP -Wno-TIMESCALEMOD $^
+	@echo -e "\n\n"
+	@echo -e "Done linting\n\n"
 
 # Rule to look at the waveforms with gtkwave
 verify: $(DUMP).vcd
@@ -268,9 +281,9 @@ endif
 rtl: $(addprefix $(SRC)/, $(TOP_FILE) $(COMPONENT_FILES))
 	@echo "----------------------------------------------------------------"
 	@echo "Generating RTL Schematic ....."
-	@echo "----------------------------------------------------------------\n\n"
+	@echo -e "----------------------------------------------------------------\n\n"
 	@$(DC) -d -p 'read_verilog -sv $^; hierarchy -check -top $(TOP_MODULE); proc; opt; fsm; opt; memory; opt; show' > log_mapping.log
-	@echo "Done creating Schematic"	
+	@echo -e "Done creating Schematic \n\n"	
 
 ###########################################################################################
 # Designate targets that do not correspond directly to files so that they are
@@ -280,6 +293,7 @@ rtl: $(addprefix $(SRC)/, $(TOP_FILE) $(COMPONENT_FILES))
 .PHONY: $(SRC) $(MAP)
 .PHONY: $(SIM_SOURCE) $(SIM_MAPPED)
 .PHONY: lint verify view
+.PHONY: ice
 ###########################################################################################
 # Designate targerts that whose runtime warnings/errors may be ignored
 ###########################################################################################
