@@ -20,5 +20,5 @@ List all the required equipment and upload a breadboard with the equipment set u
 All the stuff from the proposal goes here, obviously updated from the time you did the proposal to the final layout
 Include more than just block diagrams, including sub-block diagrams, state-transition diagrams, flowcharts, and timing diagrams
 
-## Some Legal Statement
-From Purdue that I haven't figured out yet, maybe some stuff about Dr. J, the program, and other instructors
+## Statement from Purdue
+Pending
