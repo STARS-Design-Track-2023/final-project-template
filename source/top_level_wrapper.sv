@@ -7,7 +7,7 @@ module top_level_wrapper (
     input logic ncs, // Chip Select (Active Low)
     input logic [33:0] gpio_in, // Breakout Board Pins
     output logic [33:0] gpio_out, // Breakout Board Pins
-    output logic [33:0] gpio_oe // Active Low Output Enable
+    output logic [33:0] gpio_oeb // Active Low Output Enable
 );
 
     logic block_reset, block_reset_int, gated_reset;
